@@ -23,12 +23,13 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
-      - name: Install Dependencies
+      - name: Install Dependencies (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get -y update
           sudo apt-get -y install poppler-utils
           sudo fc-cache -vr
+      - name: Install Dependencies (macOS)
         if: startsWith(matrix.os, 'macOS')
         run: |
           brew install poppler

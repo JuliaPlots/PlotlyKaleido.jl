@@ -96,10 +96,13 @@ function savefig(
         error("Unknown format $format. Expected one of $ALL_FORMATS")
     end
 
-    if !contains("format", payload)
+    if occursin('\n', payload)
+        throw(ArgumentError("`payload` needs to be a valid json string without newline characters."))
+    end
+
+    if !occursin("\"format\":", payload)
         ind = findfirst('{', payload)
         payload = string("{", "\"format\": \"", format, "\",", payload[ind+1:end])
-        @show payload
     end
 
     _ensure_kaleido_running()

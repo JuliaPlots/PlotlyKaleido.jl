@@ -1,5 +1,5 @@
-using Kaleido
 using Test
+@test_nowarn @eval using Kaleido
 
 @testset "Save to file" begin
     plt = "{\"data\":{\"data\":[{\"y\":[1,2,3],\"type\":\"scatter\",\"x\":[0,1,2]}]}}"

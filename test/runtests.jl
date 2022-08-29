@@ -1,6 +1,6 @@
 using Kaleido
 using Test
-using PlotlyLight
+import PlotlyLight, EasyConfig, PlotlyJS
 
 @testset "Save to file" begin
     plt = "{\"data\":{\"data\":[{\"y\":[1,2,3],\"type\":\"scatter\",\"x\":[0,1,2]}]}}"
@@ -15,8 +15,18 @@ using PlotlyLight
     end
 end
 
+@testset "PlotlyJS" begin
+    plt = PlotlyJS.scatter(x=rand(10))
+    for ext in Kaleido.ALL_FORMATS
+        ext == "eps" && continue  # Why does this work above but not here?
+        fn = tempname() * "." * ext
+        @info fn
+        @test Kaleido.savefig(plt, fn) == fn
+    end
+end
+
 @testset "PlotlyLight" begin
-    plt = Plot(Config(x=rand(10)))
+    plt = PlotlyLight.Plot(EasyConfig.Config(x=rand(10)))
     for ext in Kaleido.ALL_FORMATS
         ext == "eps" && continue  # Why does this work above but not here?
         fn = tempname() * "." * ext

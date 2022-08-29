@@ -23,5 +23,15 @@ This code was originally part of [PlotlyJS.jl](https://github.com/JuliaPlots/Plo
 
 
 ```julia
+using Kaleido
 
+import PlotlyLight, EasyConfig, PlotlyJS
+
+p1 = PlotlyLight.Plot(EasyConfig.Config(x = rand(10)))
+
+p2 = PlotlyJS.plot(PlotlyJS.scatter(x = rand(10)))
+
+# Kaleido is agnostic about which package you use to make Plotly plots!
+Kaleido.savefig(p1, "plot1.png")
+Kaleido.savefig(p2, "plot2.png")
 ```

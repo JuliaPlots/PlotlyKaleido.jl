@@ -16,7 +16,7 @@ import PlotlyLight, EasyConfig, PlotlyJS
 end
 
 @testset "PlotlyJS" begin
-    plt = PlotlyJS.scatter(x=rand(10))
+    plt = PlotlyJS.plot(PlotlyJS.scatter(x=rand(10)))
     for ext in Kaleido.ALL_FORMATS
         ext == "eps" && continue  # Why does this work above but not here?
         fn = tempname() * "." * ext

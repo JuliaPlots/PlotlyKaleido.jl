@@ -1,4 +1,5 @@
 using Test
+@test_nowarn @eval using Kaleido
 
 import PlotlyLight, EasyConfig, PlotlyJS
 @test_nowarn @eval using Kaleido

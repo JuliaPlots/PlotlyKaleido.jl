@@ -66,6 +66,7 @@ const TEXT_FORMATS = ["svg", "json", "eps"]
 
 function save_payload(io::IO, payload::AbstractString, format::AbstractString)
     format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")
+
     bytes = transcode(UInt8, payload)
     write(P.stdin, bytes)
     write(P.stdin, transcode(UInt8, "\n"))

@@ -83,8 +83,6 @@ function save_payload(io::IO, payload::AbstractString, format::AbstractString)
     write(io, bytes)
 end
 
-
-
 function savefig(io::IO, plot; height=500, width=700, scale=1, format="png")
     payload = JSON.json((; height, width, scale, format, data=plot))
     save_payload(io, payload, format)

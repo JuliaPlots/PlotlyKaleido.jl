@@ -3,35 +3,27 @@ using Test
 import PlotlyLight, EasyConfig, PlotlyJS
 @test_nowarn @eval using Kaleido
 
-@testset "Save to file" begin
+@testset "Saving JSON String" begin
     plt = "{\"data\":{\"data\":[{\"y\":[1,2,3],\"type\":\"scatter\",\"x\":[0,1,2]}]}}"
     for ext in Kaleido.ALL_FORMATS
-        fn = tempname() * "." * ext
-        @info fn
-        open(fn, "w") do io
-            Kaleido.save_payload(io, plt, fn)
-            @test isfile(fn)
-            rm(fn)
+        file = tempname() * ".$ext"
+        open(io -> Kaleido.save_payload(io, plt, ext), file, "w")
+        @test isfile(file)
+        rm(file)
+    end
+end
+
+@testset "Saving PlotlyJS & PlotlyLight" begin
+    for plt in [
+            PlotlyJS.plot(PlotlyJS.scatter(x=rand(10))),
+            PlotlyLight.Plot(EasyConfig.Config(x=rand(10)))
+        ]
+        for ext in Kaleido.ALL_FORMATS
+            ext == "eps" && continue # TODO" Why does this work above but not here?
+            file = tempname() * ".$ext"
+            @test Kaleido.savefig(plt, file) == file
+            @test isfile(file)
+            rm(file)
         end
-    end
-end
-
-@testset "PlotlyJS" begin
-    plt = PlotlyJS.plot(PlotlyJS.scatter(x=rand(10)))
-    for ext in Kaleido.ALL_FORMATS
-        ext == "eps" && continue  # Why does this work above but not here?
-        fn = tempname() * "." * ext
-        @info fn
-        @test Kaleido.savefig(plt, fn) == fn
-    end
-end
-
-@testset "PlotlyLight" begin
-    plt = PlotlyLight.Plot(EasyConfig.Config(x=rand(10)))
-    for ext in Kaleido.ALL_FORMATS
-        ext == "eps" && continue  # Why does this work above but not here?
-        fn = tempname() * "." * ext
-        @info fn
-        @test Kaleido.savefig(plt, fn) == fn
     end
 end

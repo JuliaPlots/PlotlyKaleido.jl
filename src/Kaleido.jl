@@ -25,9 +25,6 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
 restart() = (kill(); start())
 
-# Get integer code from a JSON string
-get_code(json::AbstractString) = parse(Int, match(r"(?<=\"code\":)[^,]*", json).match)
-
 function start()
     is_running() && return
 
@@ -53,7 +50,7 @@ function start()
 
     res = readline(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
     length(res) == 0 && error("Kaleido startup failed.")
-    code = get_code(res)
+    code = JSON.parse(res)["code"]
     code == 0 || error("Kaleido startup failed with code $code.")
     return
 end

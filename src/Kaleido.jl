@@ -58,12 +58,14 @@ function start()
     return
 end
 
+
 #-----------------------------------------------------------------------------# save
 const ALL_FORMATS = ["png", "jpeg", "webp", "svg", "pdf", "eps", "json"]
 const TEXT_FORMATS = ["svg", "json", "eps"]
 
 
 function save_payload(io::IO, payload::AbstractString, format::AbstractString)
+    format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")
     bytes = transcode(UInt8, payload)
     write(P.stdin, bytes)
     write(P.stdin, transcode(UInt8, "\n"))
@@ -84,10 +86,7 @@ end
 
 
 function savefig(io::IO, plot; height=500, width=700, scale=1, format="png")
-    string(format) in ALL_FORMATS || error("Unknown format \"$format\".  Expected one of $ALL_FORMATS")
-
     payload = JSON.json((; height, width, scale, format, data=plot))
-
     save_payload(io, payload, format)
 end
 

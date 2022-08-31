@@ -1,11 +1,14 @@
 module Kaleido
 
-import JSON
+using JSON: JSON
 using Base64
 using Kaleido_jll
 
 export savefig
 
+__init__() = start()
+
+#-----------------------------------------------------------------------------# Kaleido Process
 mutable struct Pipes
     stdin::Pipe
     stdout::Pipe
@@ -16,167 +19,79 @@ end
 
 const P = Pipes()
 
-const ALL_FORMATS = Set(["png", "jpeg", "webp", "svg", "pdf", "eps", "json"])
-const TEXT_FORMATS = Set(["svg", "json", "eps"])
-const KALEIDO_MIMES = Dict(
-    "application/pdf" => "pdf",
-    "image/png" => "png",
-    "image/svg+xml" => "svg",
-    "image/eps" => "eps",
-    "image/jpeg" => "jpeg",
-    "image/jpeg" => "jpeg",
-    "application/json" => "json",
-    "application/json; charset=UTF-8" => "json",
-)
+kill() = is_running() && kill(P.proc)
 
-function __init__()
-    @async _start_kaleido_process()
-end
+is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
-function _restart_kaleido_process()
-    if isdefined(P, :proc) && process_running(P.proc)
-        kill(P.proc)
-    end
-    _start_kaleido_process()
-end
+restart() = (kill(); start())
 
+function start()
+    is_running() && return
 
-function _start_kaleido_process()
+    cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
+    BIN = Sys.isapple() ? `$(cmd) plotly --disable-gpu --single-process` : `$(cmd) plotly --disable-gpu --no-sandbox`
+
+    kstdin = Pipe()
+    kstdout = Pipe()
+    kstderr = Pipe()
+    kproc = run(pipeline(BIN, stdin=kstdin, stdout=kstdout, stderr=kstderr), wait=false)
+
+    process_running(kproc) || error("There was a problem starting up kaleido.")
+    close(kstdout.in)
+    close(kstderr.in)
+    close(kstdin.out)
+    Base.start_reading(kstderr.out)
+
     global P
-    try
-        BIN = let
-            art = Kaleido_jll.artifact_dir
-            cmd = if Sys.islinux() || Sys.isapple()
-                joinpath(art, "kaleido")
-            else
-                # Windows
-                joinpath(art, "kaleido.cmd")
-            end
-            no_sandbox = "--no-sandbox"
-            Sys.isapple() ? `$(cmd) plotly --disable-gpu --single-process` : `$(cmd) plotly --disable-gpu $(no_sandbox)`
-        end
-        kstdin = Pipe()
-        kstdout = Pipe()
-        kstderr = Pipe()
-        kproc = run(pipeline(BIN,
-                             stdin=kstdin, stdout=kstdout, stderr=kstderr),
-                    wait=false)
-        process_running(kproc) || error("There was a problem starting up kaleido.")
-        close(kstdout.in)
-        close(kstderr.in)
-        close(kstdin.out)
-        Base.start_reading(kstderr.out)
-        P.stdin = kstdin
-        P.stdout = kstdout
-        P.stderr = kstderr
-        P.proc = kproc
+    P.stdin = kstdin
+    P.stdout = kstdout
+    P.stderr = kstderr
+    P.proc = kproc
 
-        # read startup message and check for errors
-        res = readline(P.stdout)
-        if length(res) == 0
-            error("Could not start Kaleido process")
-        end
-
-        js = JSON.parse(res)
-        if get(js, "code", 0) != 0
-            error("Could not start Kaleido process")
-        end
-    catch e
-        @warn "Kaleido is not available on this system. Julia will be unable to save images of any plots."
-        @warn "$e"
-    end
-    nothing
+    res = readline(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
+    length(res) == 0 && error("Kaleido startup failed.")
+    code = JSON.parse(res)["code"]
+    code == 0 || error("Kaleido startup failed with code $code.")
+    return
 end
 
-function savefig(
-        payload;
-        format::String="png"
-    )::Vector{UInt8}
-    if !(format in ALL_FORMATS)
-        error("Unknown format $format. Expected one of $ALL_FORMATS")
-    end
 
-    if occursin('\n', payload)
-        throw(ArgumentError("`payload` needs to be a valid json string without newline characters."))
-    end
+#-----------------------------------------------------------------------------# save
+const ALL_FORMATS = ["png", "jpeg", "webp", "svg", "pdf", "eps", "json"]
+const TEXT_FORMATS = ["svg", "json", "eps"]
 
-    if !occursin("\"format\":", payload)
-        ind = findfirst('{', payload)
-        payload = string("{", "\"format\": \"", format, "\",", payload[ind+1:end])
-    end
 
-    _ensure_kaleido_running()
-    # convert payload to vector of bytes
+function save_payload(io::IO, payload::AbstractString, format::AbstractString)
+    format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")
+
     bytes = transcode(UInt8, payload)
     write(P.stdin, bytes)
     write(P.stdin, transcode(UInt8, "\n"))
     flush(P.stdin)
 
-    # read stdout and parse to json
     res = readline(P.stdout)
-    js = JSON.parse(res)
+    obj = JSON.parse(res)
+    obj["code"] == 0 || error("Transform failed: $res")
 
-    # check error code
-    code = get(js, "code", 0)
-    if code != 0
-        msg = get(js, "message", nothing)
-        error("Transform failed with error code $code: $msg")
-    end
-
-    # get raw image
-    img = String(js["result"])
+    img = String(obj["result"])
 
     # base64 decode if needed, otherwise transcode to vector of byte
-    if format in TEXT_FORMATS
-        return transcode(UInt8, img)
-    else
-        return base64decode(img)
-    end
-end
+    bytes = format in TEXT_FORMATS ? transcode(UInt8, img) : base64decode(img)
 
-"""
-    savefig(
-        io::IO,
-        p;
-        format::String="png"
-    )
-Save a plot `p` to the io stream `io`. They keyword argument `format`
-determines the type of data written to the figure and must be one of
-$(join(ALL_FORMATS, ", ")).
-"""
-function savefig(io::IO,
-        payload;
-        format::String="png")
-    bytes = savefig(payload; format)
     write(io, bytes)
 end
 
-
-"""
-    savefig(
-        p, fn::AbstractString;
-        format::Union{Nothing,String}=nothing,
-    )
-Save a plot `p` to a file named `fn`. If `format` is given and is one of
-$(join(ALL_FORMATS, ", ")); it will be the format of the file. By
-default the format is guessed from the extension of `fn`.
-"""
-function savefig(
-        payload::String, fn::AbstractString;
-        format::Union{Nothing,String}=nothing,
-    )
-    ext = split(fn, ".")[end]
-    if format === nothing
-        format = String(ext)
-    end
-
-    open(fn, "w") do f
-        savefig(f, payload; format)
-    end
-    return fn
+function savefig(io::IO, plot; height=500, width=700, scale=1, format="png")
+    payload = JSON.json((; height, width, scale, format, data=plot))
+    save_payload(io, payload, format)
 end
 
-_kaleido_running() = isdefined(P, :stdin) && isopen(P.stdin) && process_running(P.proc)
-_ensure_kaleido_running() = !_kaleido_running() && _restart_kaleido_process()
+function savefig(filename::AbstractString, plot; kw...)
+    format = get(kw, :format, split(filename, '.')[end])
+    open(io -> savefig(io, plot; format, kw...), filename, "w")
+    filename
+end
+
+savefig(plot, filename::AbstractString; kw...) = savefig(filename, plot; kw...)
 
 end # module Kaleido

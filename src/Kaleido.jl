@@ -4,7 +4,7 @@ using JSON: JSON
 using Base64
 using Kaleido_jll
 
-export save
+export savefig
 
 __init__() = start()
 

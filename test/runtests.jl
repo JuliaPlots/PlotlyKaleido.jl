@@ -2,7 +2,6 @@ using Test
 @test_nowarn @eval using Kaleido
 
 import PlotlyLight, EasyConfig, PlotlyJS
-@test_nowarn @eval using Kaleido
 
 @testset "Saving JSON String" begin
     plt = "{\"data\":{\"data\":[{\"y\":[1,2,3],\"type\":\"scatter\",\"x\":[0,1,2]}]}}"

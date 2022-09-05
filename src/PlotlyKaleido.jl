@@ -1,4 +1,4 @@
-module Kaleido
+module PlotlyKaleido
 
 using JSON: JSON
 using Base64

@@ -1,4 +1,4 @@
-name = "Kaleido"
+name = "PlotlyKaleido"
 uuid = "f2990250-8cf9-495f-b13a-cce12b45703c"
 authors = ["Simon Christ <christ@cell.uni-hannover.de>", "Spencer Lyon <spencerlyon2@gmail.com>"]
 version = "1.0.0"

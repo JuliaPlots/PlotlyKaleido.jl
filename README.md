@@ -24,8 +24,9 @@ This code was originally part of [PlotlyJS.jl](https://github.com/JuliaPlots/Plo
 
 ```julia
 using PlotlyKaleido
-
 import PlotlyLight, EasyConfig, PlotlyJS
+
+PlotlyKaleido.start()  # start Kaleido server
 
 p1 = PlotlyLight.Plot(EasyConfig.Config(x = rand(10)))
 
@@ -34,4 +35,16 @@ p2 = PlotlyJS.plot(PlotlyJS.scatter(x = rand(10)))
 # PlotlyKaleido is agnostic about which package you use to make Plotly plots!
 PlotlyKaleido.savefig(p1, "plot1.png")
 PlotlyKaleido.savefig(p2, "plot2.png")
+```
+
+If needed, you can restart the server:
+
+```julia
+PlotlyKaleido.restart()
+```
+
+or simply kill it:
+
+```julia
+PlotlyKaleido.kill_kaleido()
 ```

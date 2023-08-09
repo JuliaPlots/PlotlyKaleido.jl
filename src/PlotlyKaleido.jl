@@ -19,7 +19,7 @@ end
 
 const P = Pipes()
 
-kill_kaleido() = is_running() && kill_kaleido(P.proc)
+kill_kaleido() = is_running() && kill(P.proc)
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 

@@ -1,5 +1,5 @@
 using Test
-using PlotlyKaleido
+@test_nowarn @eval using PlotlyKaleido
 
 PlotlyKaleido.start()
 

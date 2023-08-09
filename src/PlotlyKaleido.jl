@@ -6,8 +6,6 @@ using Kaleido_jll
 
 export savefig
 
-__init__() = @info "Attention: PlotlyKaleido v2.0 has breaking changes. See the README for details."
-
 #-----------------------------------------------------------------------------# Kaleido Process
 mutable struct Pipes
     stdin::Pipe

@@ -1,6 +1,8 @@
 using Test
 @test_nowarn @eval using PlotlyKaleido
 
+PlotlyKaleido.start()
+
 import PlotlyLight, EasyConfig, PlotlyJS
 
 @testset "Saving JSON String" begin

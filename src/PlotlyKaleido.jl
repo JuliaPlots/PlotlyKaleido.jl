@@ -6,8 +6,6 @@ using Kaleido_jll
 
 export savefig
 
-__init__() = start()
-
 #-----------------------------------------------------------------------------# Kaleido Process
 mutable struct Pipes
     stdin::Pipe
@@ -19,11 +17,11 @@ end
 
 const P = Pipes()
 
-kill() = is_running() && kill(P.proc)
+kill_kaleido() = is_running() && kill(P.proc)
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
-restart() = (kill(); start())
+restart() = (kill_kaleido(); start())
 
 function start()
     is_running() && return

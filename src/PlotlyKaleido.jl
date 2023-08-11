@@ -21,16 +21,27 @@ kill_kaleido() = is_running() && kill(P.proc)
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
-restart(;extra_flags...) = (kill_kaleido(); sleep(0.1); start(;extra_flags...))
+restart(;kwargs...) = (kill_kaleido(); sleep(0.1); start(;kwargs...))
 
-function start(;extra_flags...)
+function start(;plotly_version = missing, kwargs...)
     is_running() && return
     cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
     basic_cmds = [cmd, "plotly"]
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
+    extra_flags = if plotly_version === missing
+        (;
+            kwargs...
+        )
+    else
+        # We create a plotlyjs flag pointing at the specified plotly version
+        (;
+            plotlyjs = "https://cdn.plot.ly/plotly-$(plotly_version).min.js",
+            kwargs...
+        )
+    end
     # Taken inspiration from https://github.com/plotly/Kaleido/blob/3b590b563385567f257db8ff27adae1adf77821f/repos/kaleido/py/kaleido/scopes/base.py#L116-L141
     user_flags = String[]
-    for (k,v) in extra_flags
+    for (k,v) in pairs(extra_flags)
         flag_name = replace(string(k), "_" => "-")
         if v isa Bool
             v && push!(user_flags, "--$flag_name")

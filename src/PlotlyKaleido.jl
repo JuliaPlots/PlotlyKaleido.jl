@@ -17,6 +17,8 @@ end
 
 const P = Pipes()
 
+const _mathjax_url = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"
+
 kill_kaleido() = is_running() && kill(P.proc)
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
@@ -27,7 +29,7 @@ function start(;plotly_version = missing, kwargs...)
     is_running() && return
     cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
     basic_cmds = [cmd, "plotly"]
-    chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
+    chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox",  "--mathjax=$(_mathjax_url)"]
     extra_flags = if plotly_version === missing
         (;
             kwargs...

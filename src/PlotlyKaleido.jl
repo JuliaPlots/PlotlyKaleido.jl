@@ -17,7 +17,8 @@ end
 
 const P = Pipes()
 
-const _mathjax_url = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js"
+const _mathjax_url_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax"
+const _mathjax_last_version = v"2.7.9"
 
 kill_kaleido() = is_running() && kill(P.proc)
 
@@ -25,11 +26,13 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
 restart(;kwargs...) = (kill_kaleido(); sleep(0.1); start(;kwargs...))
 
-function start(;plotly_version = missing, kwargs...)
+function start(;plotly_version = missing, 
+                mathjax = missing, mathjax_version::VersionNumber = _mathjax_last_version, 
+                kwargs...)
     is_running() && return
     cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
     basic_cmds = [cmd, "plotly"]
-    chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox",  "--mathjax=$(_mathjax_url)"]
+    chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
     extra_flags = if plotly_version === missing
         (;
             kwargs...
@@ -40,6 +43,21 @@ function start(;plotly_version = missing, kwargs...)
             plotlyjs = "https://cdn.plot.ly/plotly-$(plotly_version).min.js",
             kwargs...
         )
+    end
+    if !(mathjax === missing)
+        if mathjax_version > v"2.7.9"
+            error("The given mathjax version $(mathjax_version) is greater than the last supported version of $(_mathjax_last_version).")
+        end
+        if mathjax isa Bool && mathjax
+            push!(chromium_flags, "--mathjax=$(_mathjax_url_path)/$(mathjax_version)/MathJax.js")
+        elseif mathjax isa String  
+            # We expect the keyword argument to be a valid URL or similar, else error "Kaleido startup failed with code 1".
+            push!(chromium_flags, "--mathjax=$(mathjax)")
+        else
+            @warn """The value of the provided argument 
+                    mathjax=$(mathjax) 
+                  is neither a Bool nor a String and has been ignored."""
+        end
     end
     # Taken inspiration from https://github.com/plotly/Kaleido/blob/3b590b563385567f257db8ff27adae1adf77821f/repos/kaleido/py/kaleido/scopes/base.py#L116-L141
     user_flags = String[]

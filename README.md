@@ -48,3 +48,8 @@ or simply kill it:
 ```julia
 PlotlyKaleido.kill_kaleido()
 ```
+
+To enable LaTeX (using MathJax v2) in plots, use the keyword argument `mathjax`:
+```julia
+PlotlyKaleido.start(mathjax=true)  # start Kaleido server with MathJax enabled
+```

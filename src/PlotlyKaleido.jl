@@ -46,7 +46,7 @@ function start(;plotly_version = missing,
     end
     if !(mathjax === missing)
         if mathjax_version >  _mathjax_last_version
-            error("The given mathjax version $(mathjax_version) is greater than the last supported version of $(_mathjax_last_version).")
+            error("The given mathjax version ($(mathjax_version)) is greater than the last supported version ($(_mathjax_last_version)) of Kaleido.")
         end
         if mathjax isa Bool && mathjax
             push!(chromium_flags, "--mathjax=$(_mathjax_url_path)/$(mathjax_version)/MathJax.js")

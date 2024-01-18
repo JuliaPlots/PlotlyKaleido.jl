@@ -34,7 +34,7 @@ end
     end
 end
 
-@testset "shutdown" begin
+@testset "Shutdown" begin
     PlotlyKaleido.kill_kaleido()
     @test !PlotlyKaleido.is_running()
 

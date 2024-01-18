@@ -20,14 +20,14 @@ const P = Pipes()
 const _mathjax_url_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax"
 const _mathjax_last_version = v"2.7.9"
 
-kill_kaleido() = is_running() && kill(P.proc)
+kill_kaleido() = is_running() && (kill(P.proc); wait(P.proc))
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
-restart(;kwargs...) = (kill_kaleido(); sleep(0.1); start(;kwargs...))
+restart(;kwargs...) = (kill_kaleido(); start(;kwargs...))
 
-function start(;plotly_version = missing, 
-                mathjax = missing, mathjax_version::VersionNumber = _mathjax_last_version, 
+function start(;plotly_version = missing,
+                mathjax = missing, mathjax_version::VersionNumber = _mathjax_last_version,
                 kwargs...)
     is_running() && return
     cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
@@ -50,12 +50,12 @@ function start(;plotly_version = missing,
         end
         if mathjax isa Bool && mathjax
             push!(chromium_flags, "--mathjax=$(_mathjax_url_path)/$(mathjax_version)/MathJax.js")
-        elseif mathjax isa String  
+        elseif mathjax isa String
             # We expect the keyword argument to be a valid URL or similar, else error "Kaleido startup failed with code 1".
             push!(chromium_flags, "--mathjax=$(mathjax)")
         else
-            @warn """The value of the provided argument 
-                    mathjax=$(mathjax) 
+            @warn """The value of the provided argument
+                    mathjax=$(mathjax)
                   is neither a Bool nor a String and has been ignored."""
         end
     end

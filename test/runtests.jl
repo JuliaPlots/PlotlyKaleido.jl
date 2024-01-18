@@ -1,7 +1,11 @@
 using Test
 @test_nowarn @eval using PlotlyKaleido
 
-PlotlyKaleido.start()
+@testset "Start" begin
+    @test_nowarn PlotlyKaleido.start()
+    @test PlotlyKaleido.is_running()
+end
+
 
 import PlotlyLight, EasyConfig, PlotlyJS
 
@@ -28,4 +32,10 @@ end
             rm(file)
         end
     end
+end
+
+@testset "Shutdown" begin
+    PlotlyKaleido.kill_kaleido()
+    @test !PlotlyKaleido.is_running()
+
 end

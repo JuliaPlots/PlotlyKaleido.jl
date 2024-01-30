@@ -24,32 +24,35 @@ kill_kaleido() = is_running() && (kill(P.proc); wait(P.proc))
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
-restart(;kwargs...) = (kill_kaleido(); start(;kwargs...))
+restart(; kwargs...) = (kill_kaleido(); start(; kwargs...))
 
-function start(;plotly_version = missing,
-                mathjax = missing, mathjax_version::VersionNumber = _mathjax_last_version,
-                kwargs...)
+function start(;
+    plotly_version = missing,
+    mathjax = missing,
+    mathjax_version::VersionNumber = _mathjax_last_version,
+    kwargs...,
+)
     is_running() && return
     cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
     basic_cmds = [cmd, "plotly"]
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
     extra_flags = if plotly_version === missing
-        (;
-            kwargs...
-        )
+        (; kwargs...)
     else
         # We create a plotlyjs flag pointing at the specified plotly version
-        (;
-            plotlyjs = "https://cdn.plot.ly/plotly-$(plotly_version).min.js",
-            kwargs...
-        )
+        (; plotlyjs = "https://cdn.plot.ly/plotly-$(plotly_version).min.js", kwargs...)
     end
     if !(mathjax === missing)
-        if mathjax_version >  _mathjax_last_version
-            error("The given mathjax version ($(mathjax_version)) is greater than the last supported version ($(_mathjax_last_version)) of Kaleido.")
+        if mathjax_version > _mathjax_last_version
+            error(
+                "The given mathjax version ($(mathjax_version)) is greater than the last supported version ($(_mathjax_last_version)) of Kaleido.",
+            )
         end
         if mathjax isa Bool && mathjax
-            push!(chromium_flags, "--mathjax=$(_mathjax_url_path)/$(mathjax_version)/MathJax.js")
+            push!(
+                chromium_flags,
+                "--mathjax=$(_mathjax_url_path)/$(mathjax_version)/MathJax.js",
+            )
         elseif mathjax isa String
             # We expect the keyword argument to be a valid URL or similar, else error "Kaleido startup failed with code 1".
             push!(chromium_flags, "--mathjax=$(mathjax)")
@@ -61,7 +64,7 @@ function start(;plotly_version = missing,
     end
     # Taken inspiration from https://github.com/plotly/Kaleido/blob/3b590b563385567f257db8ff27adae1adf77821f/repos/kaleido/py/kaleido/scopes/base.py#L116-L141
     user_flags = String[]
-    for (k,v) in pairs(extra_flags)
+    for (k, v) in pairs(extra_flags)
         flag_name = replace(string(k), "_" => "-")
         if v isa Bool
             v && push!(user_flags, "--$flag_name")
@@ -69,12 +72,13 @@ function start(;plotly_version = missing,
             push!(user_flags, "--$flag_name=$v")
         end
     end
-    BIN  = Cmd(vcat(basic_cmds, chromium_flags, user_flags))
+    BIN = Cmd(vcat(basic_cmds, chromium_flags, user_flags))
 
     kstdin = Pipe()
     kstdout = Pipe()
     kstderr = Pipe()
-    kproc = run(pipeline(BIN, stdin=kstdin, stdout=kstdout, stderr=kstderr), wait=false)
+    kproc =
+        run(pipeline(BIN, stdin = kstdin, stdout = kstdout, stderr = kstderr), wait = false)
 
     process_running(kproc) || error("There was a problem starting up kaleido.")
     close(kstdout.in)
@@ -121,8 +125,20 @@ function save_payload(io::IO, payload::AbstractString, format::AbstractString)
     write(io, bytes)
 end
 
-function savefig(io::IO, plot; height=500, width=700, scale=1, format="png")
-    payload = JSON.json((; height, width, scale, format, data=plot))
+function savefig(io::IO, plot; height = 500, width = 700, scale = 1, format = "png")
+    payload = JSON.json((; height, width, scale, format, data = plot))
+    save_payload(io, payload, format)
+end
+
+function savefig(
+    io::IO,
+    plot::AbstractString;
+    height = 500,
+    width = 700,
+    scale = 1,
+    format = "png",
+)
+    payload = "{\"width\":$width,\"height\":$height,\"scale\":$scale,\"data\": $plot}"
     save_payload(io, payload, format)
 end
 

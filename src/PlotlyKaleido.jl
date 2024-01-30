@@ -126,6 +126,11 @@ function savefig(io::IO, plot; height=500, width=700, scale=1, format="png")
     save_payload(io, payload, format)
 end
 
+function savefig(io::IO, plot::AbstractString; height=500, width=700, scale=1, format="png")
+    payload = "{\"width\":$width,\"height\":$height,\"scale\":$scale,\"data\": $plot}"
+    save_payload(io, payload, format)
+end
+
 function savefig(filename::AbstractString, plot; kw...)
     format = get(kw, :format, split(filename, '.')[end])
     open(io -> savefig(io, plot; format, kw...), filename, "w")

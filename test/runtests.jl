@@ -15,7 +15,21 @@ import PlotlyLight, EasyConfig, PlotlyJS
         file = tempname() * ".$ext"
         open(io -> PlotlyKaleido.save_payload(io, plt, ext), file, "w")
         @test isfile(file)
+        @test filesize(file) > 0
         rm(file)
+    end
+end
+
+@testset "Saving Base structures" begin
+    plt0 = Dict(:data => [Dict(:x => [0,1,2], :type => "scatter", :y => [1,2,3])])
+    for plt in (plt0, NamedTuple(plt0))
+        for ext in PlotlyKaleido.ALL_FORMATS
+            file = tempname() * ".$ext"
+            PlotlyKaleido.savefig(file, plt)
+            @test isfile(file)
+            @test filesize(file) > 0
+            rm(file)
+        end
     end
 end
 
@@ -29,6 +43,7 @@ end
             file = tempname() * ".$ext"
             @test PlotlyKaleido.savefig(plt, file) == file
             @test isfile(file)
+            @test filesize(file) > 0
             rm(file)
         end
     end

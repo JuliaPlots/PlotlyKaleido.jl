@@ -33,7 +33,8 @@ function start(;
     kwargs...,
 )
     is_running() && return
-    cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
+    bin_name = Sys.iswindows() ? joinpath("bin", "kaleido.exe") : "kaleido"
+    cmd = joinpath(Kaleido_jll.artifact_dir, bin_name)
     basic_cmds = [cmd, "plotly"]
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
     extra_flags = if plotly_version === missing

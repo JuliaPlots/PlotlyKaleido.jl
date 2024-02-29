@@ -26,6 +26,25 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
 restart(; kwargs...) = (kill_kaleido(); start(; kwargs...))
 
+#=
+This function checks if the kaleido.cmd has only read permission, and if so,
+creates a temporary kaleido.cmd that directly calls the binary to bypass
+permission errors
+=#
+function maybe_copy_deps(dirpath = pwd())
+    Sys.iswindows() || return
+    basedir = Kaleido_jll.artifact_dir
+    js_path = joinpath("js", "kaleido_scopes.js")
+    local_js = joinpath(dirpath, js_path)
+    mkpath(local_js |> dirname) # Ensure the js directory exists
+    artifact_js = joinpath(basedir, js_path)
+    # Copy js
+    cp(artifact_js, local_js; force = true)
+    # Copy the version
+    cp(joinpath(basedir, "version"), joinpath(dirpath, "version"); force = true)
+    return
+end
+
 function start(;
     plotly_version = missing,
     mathjax = missing,
@@ -33,9 +52,10 @@ function start(;
     kwargs...,
 )
     is_running() && return
-    bin_name = Sys.iswindows() ? joinpath("bin", "kaleido.exe") : "kaleido"
-    cmd = joinpath(Kaleido_jll.artifact_dir, bin_name)
-    basic_cmds = [cmd, "plotly"]
+    # The kaleido executable must be ran from the artifact directory
+    BIN = Cmd(kaleido(); dir = Kaleido_jll.artifact_dir)
+    # We push the mandatory plotly flag
+    push!(BIN.exec, "plotly")
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
     extra_flags = if plotly_version === missing
         (; kwargs...)
@@ -73,13 +93,16 @@ function start(;
             push!(user_flags, "--$flag_name=$v")
         end
     end
-    BIN = Cmd(vcat(basic_cmds, chromium_flags, user_flags))
+    # We add the flags to the BIN
+    append!(BIN.exec, chromium_flags, extra_flags)
 
     kstdin = Pipe()
     kstdout = Pipe()
     kstderr = Pipe()
-    kproc =
+    kproc = cd(Sys.iswindows() ? mktempdir() : Kaleido_jll.artifact_dir) do
+        maybe_copy_deps(pwd()) # This will do nothing outside of windows
         run(pipeline(BIN, stdin = kstdin, stdout = kstdout, stderr = kstderr), wait = false)
+    end
 
     process_running(kproc) || error("There was a problem starting up kaleido.")
     close(kstdout.in)

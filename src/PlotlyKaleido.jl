@@ -26,25 +26,6 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
 restart(; kwargs...) = (kill_kaleido(); start(; kwargs...))
 
-#=
-This function checks if the kaleido.cmd has only read permission, and if so,
-creates a temporary kaleido.cmd that directly calls the binary to bypass
-permission errors
-=#
-function maybe_copy_deps(dirpath = pwd())
-    Sys.iswindows() || return
-    basedir = Kaleido_jll.artifact_dir
-    js_path = joinpath("js", "kaleido_scopes.js")
-    local_js = joinpath(dirpath, js_path)
-    mkpath(local_js |> dirname) # Ensure the js directory exists
-    artifact_js = joinpath(basedir, js_path)
-    # Copy js
-    cp(artifact_js, local_js; force = true)
-    # Copy the version
-    cp(joinpath(basedir, "version"), joinpath(dirpath, "version"); force = true)
-    return
-end
-
 function start(;
     plotly_version = missing,
     mathjax = missing,
@@ -99,10 +80,8 @@ function start(;
     kstdin = Pipe()
     kstdout = Pipe()
     kstderr = Pipe()
-    kproc = cd(Sys.iswindows() ? mktempdir() : Kaleido_jll.artifact_dir) do
-        maybe_copy_deps(pwd()) # This will do nothing outside of windows
+    kproc = 
         run(pipeline(BIN, stdin = kstdin, stdout = kstdout, stderr = kstderr), wait = false)
-    end
 
     process_running(kproc) || error("There was a problem starting up kaleido.")
     close(kstdout.in)

@@ -53,3 +53,8 @@ To enable LaTeX (using MathJax v2) in plots, use the keyword argument `mathjax`:
 ```julia
 PlotlyKaleido.start(mathjax=true)  # start Kaleido server with MathJax enabled
 ```
+
+## Windows Note
+Many people one Windows have issues with the latest (0.2.1) version of the Kaleido library (see for example [discourse](https://discourse.julialang.org/t/plotlyjs-causes-errors-cant-figure-out-how-to-use-plotlylight-how-to-use-plotly-from-julia/108853/29), [this PR's comment](https://github.com/JuliaPlots/PlotlyKaleido.jl/pull/17#issuecomment-1969325440) and [this issue](https://github.com/plotly/Kaleido/issues/134) on the Kaleido repository).
+
+Many people have succesfully fixed this problem on windows by downgrading the kaleido library to version 0.1.0 (see [the previously mentioned issue](https://github.com/plotly/Kaleido/issues/134)). If you experience issues with `PlotlyKaleido.start()` hanging on windows, you may want try adding `Kaledido_jll@v0.1` explicitly to your project environment to fix this.

@@ -7,11 +7,11 @@ end
 @test_nowarn @eval using PlotlyKaleido
 
     @testset "Start" begin
-    if Sys.iswindows()
-        PlotlyKaleido.start()
-    else
+    # if Sys.iswindows()
+    #     PlotlyKaleido.start()
+    # else
         @test_nowarn PlotlyKaleido.start()
-    end
+    # end
     @test PlotlyKaleido.is_running()
 end
 

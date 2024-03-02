@@ -26,17 +26,34 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
 restart(; kwargs...) = (kill_kaleido(); start(; kwargs...))
 
+# The content of this function is inspired from https://discourse.julialang.org/t/readline-with-default-value-if-no-input-after-timeout/100388/2?u=disberd
 function readline_noblock(io)
-    for i in 1:30
-        if bytesavailable(io) > 0
-            return readline(io)
+    msg = Channel{String}(1)
+
+    task = Task() do
+        try
+            put!(msg, readline(io))
+        catch
+            put!(msg, "Stopped")
         end
-        sleep(0.1)
     end
-    error("It looks like the kaleido process is hanging.
+
+    interrupter = Task() do
+        sleep(5)
+        if !istaskdone(task)
+            Base.throwto(task, InterruptException())
+        end
+    end
+
+    schedule(interrupter)
+    schedule(task)
+    wait(task)
+    out = take!(msg)
+    out === "Stopped" &&             error("It looks like the kaleido process is hanging.
 If you are on windows this might be caused by known problems with Kaleido v0.2 on windows.
 You might want to try forcing a downgrade of the kaleido library to 0.1.
 Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details")
+    return out
 end
 
 function start(;

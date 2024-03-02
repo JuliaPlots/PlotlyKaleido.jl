@@ -26,6 +26,19 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
 restart(; kwargs...) = (kill_kaleido(); start(; kwargs...))
 
+function readline_noblock(io)
+    for i in 1:30
+        if bytesavailable(io) > 0
+            return readline(io)
+        end
+        sleep(0.1)
+    end
+    error("It looks like the kaleido process is hanging.
+If you are on windows this might be caused by known problems with Kaleido v0.2 on windows.
+You might want to try forcing a downgrade of the kaleido library to 0.1.
+Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details")
+end
+
 function start(;
     plotly_version = missing,
     mathjax = missing,
@@ -95,7 +108,7 @@ function start(;
     P.stderr = kstderr
     P.proc = kproc
 
-    res = readline(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
+    res = readline_noblock(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
     length(res) == 0 && error("Kaleido startup failed.")
     code = JSON.parse(res)["code"]
     code == 0 || error("Kaleido startup failed with code $code.")

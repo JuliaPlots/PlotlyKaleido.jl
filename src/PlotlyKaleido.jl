@@ -26,6 +26,36 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 
 restart(; kwargs...) = (kill_kaleido(); start(; kwargs...))
 
+# The content of this function is inspired from https://discourse.julialang.org/t/readline-with-default-value-if-no-input-after-timeout/100388/2?u=disberd
+function readline_noblock(io)
+    msg = Channel{String}(1)
+
+    task = Task() do
+        try
+            put!(msg, readline(io))
+        catch
+            put!(msg, "Stopped")
+        end
+    end
+
+    interrupter = Task() do
+        sleep(5)
+        if !istaskdone(task)
+            Base.throwto(task, InterruptException())
+        end
+    end
+
+    schedule(interrupter)
+    schedule(task)
+    wait(task)
+    out = take!(msg)
+    out === "Stopped" &&             error("It looks like the kaleido process is hanging.
+If you are on windows this might be caused by known problems with Kaleido v0.2 on windows.
+You might want to try forcing a downgrade of the kaleido library to 0.1.
+Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details")
+    return out
+end
+
 function start(;
     plotly_version = missing,
     mathjax = missing,
@@ -33,8 +63,10 @@ function start(;
     kwargs...,
 )
     is_running() && return
-    cmd = joinpath(Kaleido_jll.artifact_dir, "kaleido" * (Sys.iswindows() ? ".cmd" : ""))
-    basic_cmds = [cmd, "plotly"]
+    # The kaleido executable must be ran from the artifact directory
+    BIN = Cmd(kaleido(); dir = Kaleido_jll.artifact_dir)
+    # We push the mandatory plotly flag
+    push!(BIN.exec, "plotly")
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
     extra_flags = if plotly_version === missing
         (; kwargs...)
@@ -72,12 +104,13 @@ function start(;
             push!(user_flags, "--$flag_name=$v")
         end
     end
-    BIN = Cmd(vcat(basic_cmds, chromium_flags, user_flags))
+    # We add the flags to the BIN
+    append!(BIN.exec, chromium_flags, extra_flags)
 
     kstdin = Pipe()
     kstdout = Pipe()
     kstderr = Pipe()
-    kproc =
+    kproc = 
         run(pipeline(BIN, stdin = kstdin, stdout = kstdout, stderr = kstderr), wait = false)
 
     process_running(kproc) || error("There was a problem starting up kaleido.")
@@ -92,7 +125,7 @@ function start(;
     P.stderr = kstderr
     P.proc = kproc
 
-    res = readline(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
+    res = readline_noblock(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
     length(res) == 0 && error("Kaleido startup failed.")
     code = JSON.parse(res)["code"]
     code == 0 || error("Kaleido startup failed with code $code.")

@@ -20,6 +20,15 @@ const P = Pipes()
 const _mathjax_url_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax"
 const _mathjax_last_version = v"2.7.9"
 
+const _error_msg = Ref("")
+haserror() = !isempty(_error_msg[])
+function seterror(s::String)
+    _error_msg[] = s
+    @error "$(_error_msg[])"
+    kill_kaleido()
+    return nothing
+end
+
 kill_kaleido() = is_running() && (kill(P.proc); wait(P.proc))
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
@@ -49,7 +58,7 @@ function readline_noblock(io)
     schedule(task)
     wait(task)
     out = take!(msg)
-    out === "Stopped" &&             error("It looks like the kaleido process is hanging.
+    out === "Stopped" && seterror("It looks like the kaleido process is hanging.
 If you are on windows this might be caused by known problems with Kaleido v0.2 on windows.
 You might want to try forcing a downgrade of the kaleido library to 0.1.
 Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details")
@@ -63,6 +72,7 @@ function start(;
     kwargs...,
 )
     is_running() && return
+    _error_msg[] = ""
     # The kaleido executable must be ran from the artifact directory
     BIN = Cmd(kaleido(); dir = Kaleido_jll.artifact_dir)
     # We push the mandatory plotly flag
@@ -126,9 +136,11 @@ function start(;
     P.proc = kproc
 
     res = readline_noblock(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
-    length(res) == 0 && error("Kaleido startup failed.")
-    code = JSON.parse(res)["code"]
-    code == 0 || error("Kaleido startup failed with code $code.")
+    length(res) == 0 && seterror("Kaleido startup failed.")
+    if !haserror()
+        code = JSON.parse(res)["code"]
+        code == 0 || seterror("Kaleido startup failed with code $code.")
+    end
     return
 end
 
@@ -139,6 +151,7 @@ const TEXT_FORMATS = ["svg", "json", "eps"]
 
 
 function save_payload(io::IO, payload::AbstractString, format::AbstractString)
+    haserror() && error(_error_msg[])
     format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")
 
     bytes = transcode(UInt8, payload)

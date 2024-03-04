@@ -59,9 +59,11 @@ function readline_noblock(io; timeout = 10)
     wait(task)
     kaleido_version = read(joinpath(Kaleido_jll.artifact_dir, "version"), String)
     out = take!(msg)
-    out === "Stopped" && seterror("It looks like the Kaleido (version $(kaleido_version)) process is hanging.
-If you are on Windows this might be caused by known problems with Kaleido v0.2 on Windows.
-You might want to try forcing a downgrade of the kaleido library to 0.1.
+    out === "Stopped" && seterror("It looks like the Kaleido process is hanging. 
+The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+
+If you are on Windows this might be caused by known problems with Kaleido v0.2 on Windows (you are using version $(kaleido_version)).
+You might want to try forcing a downgrade of the Kaleido_jll library to 0.1.
 Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details.
 
 If you think this is not your case, you might try using a longer timeout to check if the process is not responding (defaults to 10 seconds) by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`")

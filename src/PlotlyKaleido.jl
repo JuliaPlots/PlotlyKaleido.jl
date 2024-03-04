@@ -12,6 +12,7 @@ mutable struct Pipes
     stdout::Pipe
     stderr::Pipe
     proc::Base.Process
+    error_msg::String
     Pipes() = new()
 end
 
@@ -20,11 +21,10 @@ const P = Pipes()
 const _mathjax_url_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax"
 const _mathjax_last_version = v"2.7.9"
 
-const _error_msg = Ref("")
-haserror() = !isempty(_error_msg[])
+haserror() = !isempty(P.error_msg)
 function seterror(s::String)
-    _error_msg[] = s
-    @error "$(_error_msg[])"
+    P.error_msg = s
+    @error "$(s)"
     kill_kaleido()
     return nothing
 end
@@ -72,7 +72,6 @@ function start(;
     kwargs...,
 )
     is_running() && return
-    _error_msg[] = ""
     # The kaleido executable must be ran from the artifact directory
     BIN = Cmd(kaleido(); dir = Kaleido_jll.artifact_dir)
     # We push the mandatory plotly flag
@@ -134,6 +133,7 @@ function start(;
     P.stdout = kstdout
     P.stderr = kstderr
     P.proc = kproc
+    P.error_msg = ""
 
     res = readline_noblock(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
     length(res) == 0 && seterror("Kaleido startup failed.")
@@ -151,7 +151,7 @@ const TEXT_FORMATS = ["svg", "json", "eps"]
 
 
 function save_payload(io::IO, payload::AbstractString, format::AbstractString)
-    haserror() && error(_error_msg[])
+    haserror() && error(P.error_msg)
     format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")
 
     bytes = transcode(UInt8, payload)

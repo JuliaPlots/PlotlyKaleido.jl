@@ -48,7 +48,7 @@ function readline_noblock(io)
     end
 
     interrupter = Task() do
-        sleep(5)
+        sleep(10)
         if !istaskdone(task)
             Base.throwto(task, InterruptException())
         end

@@ -1,7 +1,7 @@
 name = "PlotlyKaleido"
 uuid = "f2990250-8cf9-495f-b13a-cce12b45703c"
 authors = ["Simon Christ <christ@cell.uni-hannover.de>", "Spencer Lyon <spencerlyon2@gmail.com>"]
-version = "2.2.3"
+version = "2.2.4"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"

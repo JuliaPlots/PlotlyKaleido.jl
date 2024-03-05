@@ -12,7 +12,6 @@ mutable struct Pipes
     stdout::Pipe
     stderr::Pipe
     proc::Base.Process
-    error_msg::String
     Pipes() = new()
 end
 
@@ -21,10 +20,8 @@ const P = Pipes()
 const _mathjax_url_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax"
 const _mathjax_last_version = v"2.7.9"
 
-haserror() = !isempty(P.error_msg)
-function seterror(s::String)
-    P.error_msg = s
-    @error "$(s)"
+function warn_and_kill(s::String)
+    @warn "$s"
     kill_kaleido()
     return nothing
 end
@@ -59,7 +56,7 @@ function readline_noblock(io; timeout = 10)
     wait(task)
     kaleido_version = read(joinpath(Kaleido_jll.artifact_dir, "version"), String)
     out = take!(msg)
-    out === "Stopped" && seterror("It looks like the Kaleido process is hanging. 
+    out === "Stopped" && warn_and_kill("It looks like the Kaleido process is not responding. 
 The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
 
 If you are on Windows this might be caused by known problems with Kaleido v0.2 on Windows (you are using version $(kaleido_version)).
@@ -139,13 +136,12 @@ function start(;
     P.stdout = kstdout
     P.stderr = kstderr
     P.proc = kproc
-    P.error_msg = ""
 
     res = readline_noblock(P.stdout; timeout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
-    length(res) == 0 && seterror("Kaleido startup failed.")
+    length(res) == 0 && warn_and_kill("Kaleido startup failed.")
     if !haserror()
         code = JSON.parse(res)["code"]
-        code == 0 || seterror("Kaleido startup failed with code $code.")
+        code == 0 || warn_and_kill("Kaleido startup failed with code $code.")
     end
     return
 end
@@ -157,7 +153,9 @@ const TEXT_FORMATS = ["svg", "json", "eps"]
 
 
 function save_payload(io::IO, payload::AbstractString, format::AbstractString)
-    haserror() && error(P.error_msg)
+    isrunning() || error("It looks like the Kaleido process is not running, so you can not save plotly figures.
+Remember to start the process before using `savefig` by calling `PlotlyKaleido.start()`.
+If the process was killed due to an error during initialization, you will receive a warning when the `PlotlyKaleido.start` function is executing")
     format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")
 
     bytes = transcode(UInt8, payload)

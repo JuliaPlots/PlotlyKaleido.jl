@@ -139,7 +139,7 @@ function start(;
 
     res = readline_noblock(P.stdout; timeout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
     length(res) == 0 && warn_and_kill("Kaleido startup failed.")
-    if !is_running()
+    if is_running()
         code = JSON.parse(res)["code"]
         code == 0 || warn_and_kill("Kaleido startup failed with code $code.")
     end

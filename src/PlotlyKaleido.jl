@@ -139,7 +139,7 @@ function start(;
 
     res = readline_noblock(P.stdout; timeout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
     length(res) == 0 && warn_and_kill("Kaleido startup failed.")
-    if !haserror()
+    if !is_running()
         code = JSON.parse(res)["code"]
         code == 0 || warn_and_kill("Kaleido startup failed with code $code.")
     end
@@ -153,7 +153,7 @@ const TEXT_FORMATS = ["svg", "json", "eps"]
 
 
 function save_payload(io::IO, payload::AbstractString, format::AbstractString)
-    isrunning() || error("It looks like the Kaleido process is not running, so you can not save plotly figures.
+    is_running() || error("It looks like the Kaleido process is not running, so you can not save plotly figures.
 Remember to start the process before using `savefig` by calling `PlotlyKaleido.start()`.
 If the process was killed due to an error during initialization, you will receive a warning when the `PlotlyKaleido.start` function is executing")
     format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")

@@ -20,6 +20,12 @@ const P = Pipes()
 const _mathjax_url_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax"
 const _mathjax_last_version = v"2.7.9"
 
+function warn_and_kill(s::String)
+    @warn "$s"
+    kill_kaleido()
+    return nothing
+end
+
 kill_kaleido() = is_running() && (kill(P.proc); wait(P.proc))
 
 is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
@@ -27,7 +33,7 @@ is_running() = isdefined(P, :proc) && isopen(P.stdin) && process_running(P.proc)
 restart(; kwargs...) = (kill_kaleido(); start(; kwargs...))
 
 # The content of this function is inspired from https://discourse.julialang.org/t/readline-with-default-value-if-no-input-after-timeout/100388/2?u=disberd
-function readline_noblock(io)
+function readline_noblock(io; timeout = 10)
     msg = Channel{String}(1)
 
     task = Task() do
@@ -39,7 +45,7 @@ function readline_noblock(io)
     end
 
     interrupter = Task() do
-        sleep(5)
+        sleep(timeout)
         if !istaskdone(task)
             Base.throwto(task, InterruptException())
         end
@@ -48,11 +54,16 @@ function readline_noblock(io)
     schedule(interrupter)
     schedule(task)
     wait(task)
+    kaleido_version = read(joinpath(Kaleido_jll.artifact_dir, "version"), String)
     out = take!(msg)
-    out === "Stopped" &&             error("It looks like the kaleido process is hanging.
-If you are on windows this might be caused by known problems with Kaleido v0.2 on windows.
-You might want to try forcing a downgrade of the kaleido library to 0.1.
-Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details")
+    out === "Stopped" && warn_and_kill("It looks like the Kaleido process is not responding. 
+The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+
+If you are on Windows this might be caused by known problems with Kaleido v0.2 on Windows (you are using version $(kaleido_version)).
+You might want to try forcing a downgrade of the Kaleido_jll library to 0.1.
+Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details.
+
+If you think this is not your case, you might try using a longer timeout to check if the process is not responding (defaults to 10 seconds) by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`")
     return out
 end
 
@@ -60,6 +71,7 @@ function start(;
     plotly_version = missing,
     mathjax = missing,
     mathjax_version::VersionNumber = _mathjax_last_version,
+    timeout = 10,
     kwargs...,
 )
     is_running() && return
@@ -125,10 +137,12 @@ function start(;
     P.stderr = kstderr
     P.proc = kproc
 
-    res = readline_noblock(P.stdout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
-    length(res) == 0 && error("Kaleido startup failed.")
-    code = JSON.parse(res)["code"]
-    code == 0 || error("Kaleido startup failed with code $code.")
+    res = readline_noblock(P.stdout; timeout)  # {"code": 0, "message": "Success", "result": null, "version": "0.2.1"}
+    length(res) == 0 && warn_and_kill("Kaleido startup failed.")
+    if is_running()
+        code = JSON.parse(res)["code"]
+        code == 0 || warn_and_kill("Kaleido startup failed with code $code.")
+    end
     return
 end
 
@@ -139,6 +153,9 @@ const TEXT_FORMATS = ["svg", "json", "eps"]
 
 
 function save_payload(io::IO, payload::AbstractString, format::AbstractString)
+    is_running() || error("It looks like the Kaleido process is not running, so you can not save plotly figures.
+Remember to start the process before using `savefig` by calling `PlotlyKaleido.start()`.
+If the process was killed due to an error during initialization, you will receive a warning when the `PlotlyKaleido.start` function is executing")
     format in ALL_FORMATS || error("Unknown format $format. Expected one of $ALL_FORMATS")
 
     bytes = transcode(UInt8, payload)

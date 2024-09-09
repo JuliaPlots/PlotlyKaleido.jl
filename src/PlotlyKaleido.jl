@@ -117,7 +117,7 @@ function start(;
         end
     end
     # We add the flags to the BIN
-    append!(BIN.exec, chromium_flags, extra_flags)
+    append!(BIN.exec, chromium_flags, user_flags)
 
     kstdin = Pipe()
     kstdout = Pipe()

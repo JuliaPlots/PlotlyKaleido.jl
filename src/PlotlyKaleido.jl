@@ -1,8 +1,8 @@
 module PlotlyKaleido
 
-using JSON: JSON
-using Base64
-using Kaleido_jll
+import JSON
+import Base64
+import Kaleido_jll
 
 export savefig
 
@@ -75,8 +75,8 @@ function start(;
     kwargs...,
 )
     is_running() && return
-    # The kaleido executable must be ran from the artifact directory
-    BIN = Cmd(kaleido(); dir = Kaleido_jll.artifact_dir)
+    # The kaleido executable must be run from the artifact directory
+    BIN = Cmd(Kaleido_jll.kaleido(); dir = Kaleido_jll.artifact_dir)
     # We push the mandatory plotly flag
     push!(BIN.exec, "plotly")
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
@@ -170,7 +170,7 @@ If the process was killed due to an error during initialization, you will receiv
     img = String(obj["result"])
 
     # base64 decode if needed, otherwise transcode to vector of byte
-    bytes = format in TEXT_FORMATS ? transcode(UInt8, img) : base64decode(img)
+    bytes = format in TEXT_FORMATS ? transcode(UInt8, img) : Base64.base64decode(img)
 
     write(io, bytes)
 end

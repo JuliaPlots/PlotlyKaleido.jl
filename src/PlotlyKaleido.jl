@@ -1,8 +1,8 @@
 module PlotlyKaleido
 
-import JSON
-import Base64
-import Kaleido_jll
+using JSON: JSON
+using Base64: Base64
+using Kaleido_jll: Kaleido_jll
 
 export savefig
 

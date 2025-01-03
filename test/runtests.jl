@@ -3,7 +3,12 @@ import Pkg
 @test_nowarn @eval using PlotlyKaleido
 
 @testset "Start" begin
-    @test_nowarn PlotlyKaleido.start()
+    if Sys.iswindows()
+        # We use @test_logs without log patterns to test that no @warn is thrown, as specified in the docstring of `@test_logs`
+        @test_logs PlotlyKaleido.start()
+    else
+        @test_nowarn PlotlyKaleido.start()
+    end
     @test PlotlyKaleido.is_running()
 end
 

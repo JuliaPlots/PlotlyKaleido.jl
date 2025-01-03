@@ -70,14 +70,20 @@ function readline_noblock(io; timeout = 10)
     wait(task)
     kaleido_version = get_kaleido_version()
     out = take!(msg)
-    out === "Stopped" && warn_and_kill("It looks like the Kaleido process is not responding. 
-The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+    if out === "Stopped" 
+        warn_str = "It looks like the Kaleido process is not responding since $(timeout) seconds. 
+The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`."
 
-If you are on Windows this might be caused by known problems with Kaleido v0.2 on Windows (you are using version $(kaleido_version)).
-You might want to try forcing a downgrade of the Kaleido_jll library to 0.1.
-Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details.
+        if should_try_fallback() && !USE_KALEIDO_FALLBACK[]
+            warn_str *= "
+You seem to be on Windows but have disabled the automatic fallback to version 0.1 of Kaleido. You may want to try enabling it by calling `PlotlyKaleido.USE_KALEIDO_FALLBACK[] = true`, as higher version of Kaleido are known to have issues on Windows.
+Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details."
+        end
 
-If you think this is not your case, you might try using a longer timeout to check if the process is not responding (defaults to 10 seconds) by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`")
+        warn_str *= "
+Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`"
+        warn_and_kill(warn_str)
+    end
     return out
 end
 

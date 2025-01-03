@@ -67,4 +67,8 @@ begin
     import Pkg
     Pkg.add(; name = "Kaleido_jll", version = "0.1")
 end
+
+The package will now default to using an explicitly provided version of Kaleido 0.1 on Windows systems without requiring to explicitly fix the version of `Kaleido_jll` in your project environment.
+
+To disable this automatic fallback, you can set `PlotlyKaleido.USE_KALEIDO_FALLBACK[] = false`.
 ```

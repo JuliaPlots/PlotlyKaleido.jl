@@ -15,8 +15,8 @@ else
     ""
 end
 
-should_try_fallback() = Sys.iswindows() && (get_kaleido_version() !== "0.1.0")
 get_kaleido_version() = read(joinpath(Kaleido_jll.artifact_dir, "version"), String)
+should_try_fallback() = Sys.iswindows() && (get_kaleido_version() !== "0.1.0")
 
 const USE_KALEIDO_FALLBACK = Ref(should_try_fallback())
 
@@ -68,7 +68,6 @@ function readline_noblock(io; timeout = 10)
     schedule(interrupter)
     schedule(task)
     wait(task)
-    kaleido_version = get_kaleido_version()
     out = take!(msg)
     if out === "Stopped" 
         warn_str = "It looks like the Kaleido process is not responding since $(timeout) seconds. 
@@ -76,11 +75,13 @@ The unresponsive process will be killed, but this means that you will not be abl
 
         if should_try_fallback() && !USE_KALEIDO_FALLBACK[]
             warn_str *= "
+
 You seem to be on Windows but have disabled the automatic fallback to version 0.1 of Kaleido. You may want to try enabling it by calling `PlotlyKaleido.USE_KALEIDO_FALLBACK[] = true`, as higher version of Kaleido are known to have issues on Windows.
 Check the Package Readme at https://github.com/JuliaPlots/PlotlyKaleido.jl/tree/main#windows-note for more details."
         end
 
         warn_str *= "
+
 Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`"
         warn_and_kill(warn_str)
     end

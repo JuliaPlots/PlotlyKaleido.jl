@@ -1,20 +1,11 @@
 using Test
 import Pkg
-if Sys.iswindows()
-    # Fix kaleido tests on windows due to Kaleido_jll@v0.2.1 hanging
-    Pkg.add(;name = "Kaleido_jll", version = "0.1")
-end
 @test_nowarn @eval using PlotlyKaleido
 
-    @testset "Start" begin
-    if Sys.iswindows()
-        PlotlyKaleido.start()
-    else
-        @test_nowarn PlotlyKaleido.start()
-    end
+@testset "Start" begin
+    @test_nowarn PlotlyKaleido.start()
     @test PlotlyKaleido.is_running()
 end
-
 
 import PlotlyLight, EasyConfig, PlotlyJS
 
@@ -62,5 +53,4 @@ end
 @testset "Shutdown" begin
     PlotlyKaleido.kill_kaleido()
     @test !PlotlyKaleido.is_running()
-
 end

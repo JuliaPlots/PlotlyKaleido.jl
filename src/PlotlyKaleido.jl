@@ -1,10 +1,18 @@
 module PlotlyKaleido
 
 using JSON: JSON
+using Artifacts: @artifact_str
 using Base64: Base64
 using Kaleido_jll: Kaleido_jll
 
 export savefig
+
+#-----------------------------------------------------------------------------# Windows Fallback
+
+should_try_fallback() = Sys.iswindows() && (get_kaleido_version() !== "0.1.0")
+get_kaleido_version() = read(joinpath(Kaleido_jll.artifact_dir, "version"), String)
+
+const USE_KALEIDO_FALLBACK = Ref(should_try_fallback())
 
 #-----------------------------------------------------------------------------# Kaleido Process
 mutable struct Pipes
@@ -54,7 +62,7 @@ function readline_noblock(io; timeout = 10)
     schedule(interrupter)
     schedule(task)
     wait(task)
-    kaleido_version = read(joinpath(Kaleido_jll.artifact_dir, "version"), String)
+    kaleido_version = get_kaleido_version()
     out = take!(msg)
     out === "Stopped" && warn_and_kill("It looks like the Kaleido process is not responding. 
 The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
@@ -67,6 +75,18 @@ If you think this is not your case, you might try using a longer timeout to chec
     return out
 end
 
+function get_base_cmd()
+    cmd = if should_try_fallback() && USE_KALEIDO_FALLBACK[]
+        # For the fallback we don't fully reproduce the jll machinery as this is much simpler and should work fine for kaleido specifically on windows.
+        dir = artifact"Kaleido_fallback"
+        Cmd(`$(joinpath(dir, "bin", "kaleido.exe"))`; dir)
+    else
+        dir = Kaleido_jll.artifact_dir
+        Cmd(Kaleido_jll.kaleido(); dir)
+    end
+    return cmd
+end
+
 function start(;
     plotly_version = missing,
     mathjax = missing,
@@ -76,7 +96,7 @@ function start(;
 )
     is_running() && return
     # The kaleido executable must be run from the artifact directory
-    BIN = Cmd(Kaleido_jll.kaleido(); dir = Kaleido_jll.artifact_dir)
+    BIN = get_base_cmd()
     # We push the mandatory plotly flag
     push!(BIN.exec, "plotly")
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]

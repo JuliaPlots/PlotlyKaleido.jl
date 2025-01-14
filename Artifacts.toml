@@ -1,0 +1,16 @@
+[[Kaleido_fallback]]
+arch = "i686"
+git-tree-sha1 = "2c005b45d9aaa0e217791b3431d9e61e18806cd1"
+os = "windows"
+
+    [[Kaleido_fallback.download]]
+    sha256 = "4b81d3f958281f53bb2f462d2745766f615a6d094b2cc59a0b03fe38c73d1b8a"
+    url = "https://github.com/JuliaBinaryWrappers/Kaleido_jll.jl/releases/download/Kaleido-v0.1.0+0/Kaleido.v0.1.0.i686-w64-mingw32.tar.gz"
+[[Kaleido_fallback]]
+arch = "x86_64"
+git-tree-sha1 = "aa3e0157eff69c2604027b85f1ff85a59bfae52f"
+os = "windows"
+
+    [[Kaleido_fallback.download]]
+    sha256 = "52bce20e749b9955ee4dd3b22fa44dbdc9a6c4a4d447e243d8c016d4b730d496"
+    url = "https://github.com/JuliaBinaryWrappers/Kaleido_jll.jl/releases/download/Kaleido-v0.1.0+0/Kaleido.v0.1.0.x86_64-w64-mingw32.tar.gz"

@@ -4,21 +4,23 @@ authors = ["Simon Christ <christ@cell.uni-hannover.de>", "Spencer Lyon <spencerl
 version = "2.2.5"
 
 [deps]
+Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Kaleido_jll = "f7e6163d-2fa5-5f23-b69c-1db539e41963"
 
 [compat]
+Artifacts = "1"
 JSON = "0.21"
-julia = "1.6"
 Kaleido_jll = "0.1, 0.2"
+julia = "1.6"
 
 [extras]
 EasyConfig = "acab07b0-f158-46d4-8913-50acef6d41fe"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PlotlyJS = "f0f68f2c-4968-5e81-91da-67840de0976a"
 PlotlyLight = "ca7969ec-10b3-423e-8d99-40f33abb42bf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [targets]
 test = ["Test", "PlotlyLight", "EasyConfig", "PlotlyJS", "Pkg"]

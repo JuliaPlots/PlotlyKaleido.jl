@@ -15,6 +15,13 @@ os = "windows"
     sha256 = "52bce20e749b9955ee4dd3b22fa44dbdc9a6c4a4d447e243d8c016d4b730d496"
     url = "https://github.com/JuliaBinaryWrappers/Kaleido_jll.jl/releases/download/Kaleido-v0.1.0+0/Kaleido.v0.1.0.x86_64-w64-mingw32.tar.gz"
 
+[mathjax]
+git-tree-sha1 = "792d2df4cd187b4dc5708917ce584ef855fffe8a"
+
+    [[mathjax.download]]
+    sha256 = "941755badc098140f52ca8bac64debe542f62ca444fe1708dba0bee240462c0f"
+    url = "https://github.com/mbauman/PlotlyKaleido.jl/releases/download/mathjax-2.7.9+0/mathjax.tar.gz"
+
 [plotly]
 git-tree-sha1 = "d0e03b7c1e3e18db75491b2175aab69b08695b5f"
 

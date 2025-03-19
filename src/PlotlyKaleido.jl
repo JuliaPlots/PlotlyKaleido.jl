@@ -114,19 +114,22 @@ function start(;
     push!(BIN.exec, "plotly")
     chromium_flags = ["--disable-gpu", Sys.isapple() ? "--single-process" : "--no-sandbox"]
     extra_flags = if plotly_version === missing
-        (; kwargs...)
+        (; plotlyjs = string("file://", artifact"plotly/plotly.js"))
     else
         # We create a plotlyjs flag pointing at the specified plotly version
         (; plotlyjs = "https://cdn.plot.ly/plotly-$(plotly_version).min.js", kwargs...)
     end
-    if !(mathjax === missing)
+    if mathjax === missing
+        mathjaxfile = string("file://", artifact"mathjax/mathjax.js")
+        push!(chromium_flags, "--mathjax=$mathjaxfile")
+    else
         if mathjax_version > _mathjax_last_version
             error(
                 "The given mathjax version ($(mathjax_version)) is greater than the last supported version ($(_mathjax_last_version)) of Kaleido.",
             )
         end
-        if mathjax isa Bool && mathjax
-            push!(
+        if mathjax isa Bool
+            mathjax && push!(
                 chromium_flags,
                 "--mathjax=$(_mathjax_url_path)/$(mathjax_version)/MathJax.js",
             )

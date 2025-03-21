@@ -26,5 +26,5 @@ git-tree-sha1 = "792d2df4cd187b4dc5708917ce584ef855fffe8a"
 git-tree-sha1 = "d0e03b7c1e3e18db75491b2175aab69b08695b5f"
 
     [[plotly.download]]
-    sha256 = "20a51776dd6e50e2ad9c91acca7a140df3b4ae04ba82bc3eaad0529a0fe0f1e8"
+    sha256 = "f82c2dae28de455e23d82f2027ed5709bbc4e9c2a4af97a199f51aa7e4401dbe"
     url = "https://github.com/JuliaPlots/PlotlyKaleido.jl/releases/download/plotly-2.35.2+0/plotly.tar.gz"

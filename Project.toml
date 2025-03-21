@@ -1,7 +1,7 @@
 name = "PlotlyKaleido"
 uuid = "f2990250-8cf9-495f-b13a-cce12b45703c"
 authors = ["Simon Christ <christ@cell.uni-hannover.de>", "Spencer Lyon <spencerlyon2@gmail.com>"]
-version = "2.2.6"
+version = "2.3.0"
 
 [deps]
 Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"

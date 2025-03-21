@@ -19,8 +19,8 @@ os = "windows"
 git-tree-sha1 = "792d2df4cd187b4dc5708917ce584ef855fffe8a"
 
     [[mathjax.download]]
-    sha256 = "941755badc098140f52ca8bac64debe542f62ca444fe1708dba0bee240462c0f"
-    url = "https://github.com/mbauman/PlotlyKaleido.jl/releases/download/mathjax-2.7.9+0/mathjax.tar.gz"
+    sha256 = "0a7626f70bd8b0e4d9d1c59f7c438adcb027673f51d9311b87351f4b8d64accc"
+    url = "https://github.com/JuliaPlots/PlotlyKaleido.jl/releases/download/mathjax-2.7.9+0/mathjax.tar.gz"
 
 [plotly]
 git-tree-sha1 = "d0e03b7c1e3e18db75491b2175aab69b08695b5f"

@@ -1,0 +1,66 @@
+name: Build Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      js:
+        description: 'Javascript Resource'
+        required: true
+        type: choice
+        options:
+          - mathjax
+          - plotly
+      version:
+        description: 'Upstream Version Number'
+        required: true
+        type: string
+      buildid:
+        description: 'Release Build ID (+suffix)'
+        required: true
+        type: number
+        default: 0
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: "1"
+
+      - name: Build Artifacts
+        id: build
+        shell: julia --color=yes {0}
+        run: |
+          using Pkg: Artifacts
+          js, ver, bld, repo = "${{ inputs.js }}", "${{ inputs.version}}", ${{ inputs.buildid }}, "${{ github.repository }}"
+          url = Dict("mathjax" => "https://cdnjs.cloudflare.com/ajax/libs/mathjax/$ver/MathJax.js",
+                     "plotly" => "https://cdn.plot.ly/plotly-$ver.js")[js]
+          h = Artifacts.create_artifact() do dir
+            @info "downloading $url"
+            download(url, joinpath(dir, "$js.js"))
+          end
+          dh = Artifacts.archive_artifact(h, joinpath("_build", "$js.tar.gz"))
+          release_url = "https://github.com/$repo/releases/download/$js-$ver+$bld/$js.tar.gz"
+          Artifacts.bind_artifact!("Artifacts.toml", js, h, force=true, download_info=[(release_url, dh)])
+          @info """Success: artifact"$js" bound to $release_url"""
+          @info """  artifact"$js" -> $h"""
+          @info """  $js.tar.gz -> $dh"""
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "_build/*.tar.gz"
+          tag: "${{ inputs.js }}-${{ inputs.version }}+${{ inputs.buildid }}"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: "Update ${{ inputs.js }} artifact to v${{ inputs.version }}+${{ inputs.buildid }}"
+          body: "This is an automated pull request to update the ${{ inputs.js }} artifact corresponding to the release https://github.com/${{ github.repository }}/releases/tag/${{ inputs.js }}-${{ inputs.version }}+${{ inputs.buildid }}."

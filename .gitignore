@@ -1,3 +1,4 @@
 Manifest.toml
 *.png
 _build
+.DS_Store
